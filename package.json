@@ -1,0 +1,32 @@
+{
+  "name": "strava-route-export",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ./app/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/delfrrr/strava-route-export.git"
+  },
+  "keywords": [
+    "strava",
+    "route",
+    "export",
+    "garmin"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/delfrrr/strava-route-export/issues"
+  },
+  "homepage": "https://github.com/delfrrr/strava-route-export#readme",
+  "dependencies": {
+    "commander": "^2.9.0",
+    "express": "^4.13.4",
+    "passport": "^0.3.2",
+    "passport-strava-oauth2": "^0.1.3"
+  }
+}
