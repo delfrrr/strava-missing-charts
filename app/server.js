@@ -5,8 +5,6 @@
 'use strict';
 
 var express = require('express');
-var passport = require('passport');
-var StravaStrategy = require('passport-strava-oauth2').Strategy;
 var app = express();
 var program = require('commander');
 var React = require('react');
@@ -14,10 +12,20 @@ var ReactDomServer = require('react-dom/server');
 var webpackMiddleware = require('webpack-dev-middleware');
 var webpack = require('webpack');
 var _ = require('lodash');
-const packagejson = require('./../package.json');
 
+const packagejson = require('./../package.json');
 const STRAVA_CLIENT_ID = process.env.STRAVA_CLIENT_ID;
 const STRAVA_CLIENT_SECRET = process.env.STRAVA_CLIENT_SECRET;
+const CALLBACK_PATH = '/auth/callback';
+
+var oauth2 = require('simple-oauth2')({
+    clientID: STRAVA_CLIENT_ID,
+    clientSecret: STRAVA_CLIENT_SECRET,
+    site: 'https://www.strava.com',
+    tokenPath: '/oauth/token',
+    authorizationPath: '/oauth/authorize'
+});
+
 
 program
     .version(packagejson.version)
@@ -28,19 +36,12 @@ program
 
 program.parse(process.argv);
 
-passport.use(
-    new StravaStrategy({
-        clientID: STRAVA_CLIENT_ID,
-        clientSecret: STRAVA_CLIENT_SECRET,
-        callbackURL: `http://${program.host}:${program.port}/auth/strava/callback`
-    },
-    function(accessToken, refreshToken, profile, done) {
-        console.log('login', accessToken, refreshToken, profile);
-        done();
-    })
-);
-
-app.use(passport.initialize());
+const REDIRECT_URI = `http://${program.host}:${program.port}${CALLBACK_PATH}`;
+var authorizationUri = oauth2.authCode.authorizeURL({
+    redirect_uri: REDIRECT_URI,
+    scope: 'public',
+    state: '3(#0/!~'//TODO: wtf?
+});
 
 function render() {
     return ReactDomServer.renderToStaticMarkup(
@@ -84,9 +85,28 @@ app.use(webpackMiddleware(webpack(webpackConfig), {
     publicPath: '/'
 }));
 
+//main app page
 app.get('/', function (req, res) {
     res.type('html');
     res.send(render());
+});
+
+//redirect to strava auth
+app.get('/auth', function (req, res) {
+    res.redirect(authorizationUri);
+});
+
+//oauth callback
+app.get(CALLBACK_PATH, function (req, res) {
+    var code = req.query.code;
+    oauth2.authCode.getToken({
+        code: code,
+        redirect_uri: REDIRECT_URI
+    }, function (err, result) {
+        var token = oauth2.accessToken.create(result);
+        console.log('saveToken', err, result, token);
+        res.redirect('/');
+    });
 });
 
 app.listen(program.port, program.socket, function () {
