@@ -11,6 +11,9 @@ var app = express();
 var program = require('commander');
 var React = require('react');
 var ReactDomServer = require('react-dom/server');
+var webpackMiddleware = require('webpack-dev-middleware');
+var webpack = require('webpack');
+var _ = require('lodash');
 const packagejson = require('./../package.json');
 
 const STRAVA_CLIENT_ID = process.env.STRAVA_CLIENT_ID;
@@ -32,6 +35,7 @@ passport.use(
         callbackURL: `http://${program.host}:${program.port}/auth/strava/callback`
     },
     function(accessToken, refreshToken, profile, done) {
+        console.log('login', accessToken, refreshToken, profile);
         done();
     })
 );
@@ -42,10 +46,43 @@ function render() {
     return ReactDomServer.renderToStaticMarkup(
         React.DOM.html(
             null,
-            packagejson.name
+            React.DOM.head(
+                null,
+                React.DOM.title(
+                    null,
+                    packagejson.name
+                ),
+                React.DOM.script(
+                    null,
+                    'window.__DEV__ = true;'
+                ),
+                React.DOM.script({
+                    src: '//cdnjs.cloudflare.com/ajax/libs/react/0.14.7/react.js'
+                }),
+                React.DOM.script({
+                    src: '//cdnjs.cloudflare.com/ajax/libs/react/0.14.7/react-dom.js'
+                }),
+                React.DOM.script({
+                    src: '/app/client.js'
+                })
+            ),
+            React.DOM.body(null, '')
         )
     );
 }
+
+//TODO: find way to not override output
+var webpackConfig = _.assign({}, require('../webpack.config'), {
+    output: {
+        path: '/',
+        filename: '/app/[name].js',
+        pathinfo: true
+    }
+});
+
+app.use(webpackMiddleware(webpack(webpackConfig), {
+    publicPath: '/'
+}));
 
 app.get('/', function (req, res) {
     res.type('html');
