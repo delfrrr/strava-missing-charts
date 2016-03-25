@@ -3,7 +3,7 @@
  */
 module.exports = {
     entry: {
-        'client': require.resolve('./client.js')
+        'client': require.resolve('./app/client.js')
     },
     output: {
         path: './',

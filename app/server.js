@@ -13,7 +13,7 @@ var webpackMiddleware = require('webpack-dev-middleware');
 var webpack = require('webpack');
 var _ = require('lodash');
 
-const packagejson = require('./package.json');
+const packagejson = require('../package.json');
 const STRAVA_CLIENT_ID = process.env.STRAVA_CLIENT_ID;
 const STRAVA_CLIENT_SECRET = process.env.STRAVA_CLIENT_SECRET;
 const CALLBACK_PATH = '/auth/callback';
@@ -64,7 +64,7 @@ function render() {
                     src: '//cdnjs.cloudflare.com/ajax/libs/react/0.14.7/react-dom.js'
                 }),
                 React.DOM.script({
-                    src: '/client.js'
+                    src: '/app/client.js'
                 })
             ),
             React.DOM.body(null, '')
@@ -73,10 +73,10 @@ function render() {
 }
 
 //TODO: find way to not override output
-var webpackConfig = _.assign({}, require('./webpack.config'), {
+var webpackConfig = _.assign({}, require('../webpack.config'), {
     output: {
         path: '/',
-        filename: '/[name].js',
+        filename: '/app/[name].js',
         pathinfo: true
     }
 });
