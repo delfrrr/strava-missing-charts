@@ -6,6 +6,8 @@
 var React = require('react');
 var model = require('../../model');
 var routeComponent = require('./../route');
+var classnames = require('classnames');
+require('./routes.less');
 var component = React.createClass({
     getInitialState: function () {
         return {
@@ -20,14 +22,23 @@ var component = React.createClass({
         }).done();
     },
     render: function () {
-        if (!this.state.routes) {
-            return null;
-        }
         return React.DOM.div(
-            null,
+            {
+                className: classnames(
+                    'routes',
+                    this.props.className
+                )
+            },
+            this.state.routes ?
             this.state.routes.map((route, key) => {
                 return routeComponent({route, key});
-            })
+            }) :
+            React.DOM.div(
+                {
+                    className: 'routes__loading'
+                },
+                'Loading routes...'
+            )
         );
     }
 });

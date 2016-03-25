@@ -8,6 +8,7 @@ var _  = require('lodash');
 var appHolder = document.createElement('span');
 var model = require('./model');
 var routesComponent = require('./components/routes');
+require('./client.less');
 var component = React.createClass({
     getInitialState: function () {
         return {

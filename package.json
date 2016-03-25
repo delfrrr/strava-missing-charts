@@ -26,6 +26,7 @@
   "dependencies": {
     "backbone-model": "^1.0.10",
     "bluebird": "^3.3.4",
+    "classnames": "^2.2.3",
     "commander": "^2.9.0",
     "cookie-parser": "^1.4.1",
     "cookies-js": "^1.2.2",
