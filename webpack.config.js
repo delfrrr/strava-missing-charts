@@ -3,13 +3,13 @@
  */
 module.exports = {
     entry: {
-        'client': require.resolve('./app/client.js')
+        'client': require.resolve('./client.js')
     },
     output: {
         path: './',
         filename: './build/[name].js'
     },
-    module: {
+        module: {
         loaders: [
             {
                 test: /\.less$/,

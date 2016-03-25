@@ -13,7 +13,7 @@ var webpackMiddleware = require('webpack-dev-middleware');
 var webpack = require('webpack');
 var _ = require('lodash');
 
-const packagejson = require('./../package.json');
+const packagejson = require('./package.json');
 const STRAVA_CLIENT_ID = process.env.STRAVA_CLIENT_ID;
 const STRAVA_CLIENT_SECRET = process.env.STRAVA_CLIENT_SECRET;
 const CALLBACK_PATH = '/auth/callback';
@@ -64,7 +64,7 @@ function render() {
                     src: '//cdnjs.cloudflare.com/ajax/libs/react/0.14.7/react-dom.js'
                 }),
                 React.DOM.script({
-                    src: '/app/client.js'
+                    src: '/client.js'
                 })
             ),
             React.DOM.body(null, '')
@@ -73,10 +73,10 @@ function render() {
 }
 
 //TODO: find way to not override output
-var webpackConfig = _.assign({}, require('../webpack.config'), {
+var webpackConfig = _.assign({}, require('./webpack.config'), {
     output: {
         path: '/',
-        filename: '/app/[name].js',
+        filename: '/[name].js',
         pathinfo: true
     }
 });
@@ -84,6 +84,8 @@ var webpackConfig = _.assign({}, require('../webpack.config'), {
 app.use(webpackMiddleware(webpack(webpackConfig), {
     publicPath: '/'
 }));
+
+app.use(require('cookie-parser')());
 
 //main app page
 app.get('/', function (req, res) {
@@ -103,8 +105,11 @@ app.get(CALLBACK_PATH, function (req, res) {
         code: code,
         redirect_uri: REDIRECT_URI
     }, function (err, result) {
-        var token = oauth2.accessToken.create(result);
-        console.log('saveToken', err, result, token);
+        if (err) {
+            console.error(err);
+        } else {
+            res.cookie('token', result.access_token, {expires: 0})
+        }
         res.redirect('/');
     });
 });

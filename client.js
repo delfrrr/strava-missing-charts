@@ -6,6 +6,8 @@ var ReactDOM = require('react-dom');
 var React = require('react');
 var _  = require('lodash');
 var appHolder = document.createElement('span');
+var cookies = require('cookies-js');
+var token = cookies.get('token');
 
 //becouse we putted scripts into the head
 window.addEventListener('load', _.once(function () {
@@ -15,6 +17,11 @@ window.addEventListener('load', _.once(function () {
         {
             className: 'client'
         },
+        token ?
+        React.DOM.div(
+            null,
+            'load routes'
+        ) :
         React.DOM.a(
             {
                 href: '/auth'
