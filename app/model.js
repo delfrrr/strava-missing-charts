@@ -3,7 +3,6 @@
  */
 'use strict';
 var Model = require('backbone-model').Model;
-var cookies = require('cookies-js');
 var Promise = require('bluebird');
 var jsonp = Promise.promisify(require('jsonp'));
 const API_URL = 'https://www.strava.com/api/v3';
@@ -26,14 +25,21 @@ module.exports = new (Model.extend({
     },
 
     /**
-     * @see https://strava.github.io/api/v3/routes/#list
-     * @return {Promise.<Array>}
+     * @typedef {Object} Athlete
+     * @see https://strava.github.io/api/v3/athlete/
      */
-    getRoutes: function () {
-        return this.request('/athlete').then((res) => {
-            return this.request(`/athletes/${res.id}/routes`);
+
+    /**
+     * loads athlete profile
+     * @returns {Promise.<Athlete>}
+     */
+    updateAthlete: function () {
+        return this.request('/athlete').then((athlete) => {
+            this.set('athlete', athlete);
+            return athlete;
         });
     }
 }))({
-    token: cookies.get('token')
+    token: null,
+    athlete: null
 });

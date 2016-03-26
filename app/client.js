@@ -11,16 +11,19 @@ var loginComponent = require('./component/login');
 require('./client.less');
 var component = React.createClass({
     getInitialState: function () {
-        return {
-            token: model.get('token')
-        }
+        return model.toJSON();
+    },
+    componentDidMount: function () {
+        model.on('change', () => {
+            this.setState(model.toJSON());
+        });
     },
     render: function () {
         return React.DOM.div(
             {
                 className: 'client'
             },
-            this.state.token ?
+            this.state.athlete ?
             'charts' :
             loginComponent()
         );
