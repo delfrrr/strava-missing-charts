@@ -7,6 +7,7 @@ var React = require('react');
 var _  = require('lodash');
 var appHolder = document.createElement('span');
 var model = require('./model');
+var loginComponent = require('./component/login');
 require('./client.less');
 var component = React.createClass({
     getInitialState: function () {
@@ -20,14 +21,8 @@ var component = React.createClass({
                 className: 'client'
             },
             this.state.token ?
-            'charts'
-            :
-            React.DOM.a(
-                {
-                    href: '/auth'
-                },
-                'Login with Strava'
-            )
+            'charts' :
+            loginComponent()
         );
     }
 });

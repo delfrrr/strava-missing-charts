@@ -58,12 +58,6 @@ function render() {
                     'window.__DEV__ = true;'
                 ),
                 React.DOM.script({
-                    src: '//cdnjs.cloudflare.com/ajax/libs/react/0.14.7/react.js'
-                }),
-                React.DOM.script({
-                    src: '//cdnjs.cloudflare.com/ajax/libs/react/0.14.7/react-dom.js'
-                }),
-                React.DOM.script({
                     src: '/app/client.js'
                 })
             ),

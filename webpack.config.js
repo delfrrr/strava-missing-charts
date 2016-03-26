@@ -16,10 +16,5 @@ module.exports = {
                 loader: "style!css!less"
             }
         ]
-    },
-    externals: {
-        'react': 'React',
-        'react-dom': 'ReactDOM',
-        'mapboxgl': 'mapboxgl'
     }
 };
