@@ -5,9 +5,26 @@
 var Model = require('backbone-model').Model;
 var Promise = require('bluebird');
 var jsonp = Promise.promisify(require('jsonp'));
+var _  = require('lodash');
 const API_URL = 'https://www.strava.com/api/v3';
+const DOM_STORAGE_KEY = 'model_storage';
 var url = require('url');
-module.exports = new (Model.extend({
+
+//load model data
+var storedData = window.localStorage.getItem(DOM_STORAGE_KEY);
+if (storedData) {
+    try {
+        storedData = JSON.parse(storedData);
+    } catch (e) {
+        setTimeout(() => {
+            throw e;
+        });
+        storedData = null;
+    }
+}
+storedData = storedData || {};
+
+var model = new (Model.extend({
     /**
      * request strava api
      * @param {string} endpoint
@@ -39,7 +56,17 @@ module.exports = new (Model.extend({
             return athlete;
         });
     }
-}))({
-    token: null,
-    athlete: null
-});
+}))(_.defaults(
+    storedData,
+    {
+        token: null,
+        athlete: null
+    }
+));
+
+//save model
+model.on('change', _.debounce(() => {
+    window.localStorage.setItem(DOM_STORAGE_KEY, JSON.stringify(model.toJSON()));
+}), 100);
+
+module.exports = model;
