@@ -55,12 +55,41 @@ var model = new (Model.extend({
             this.set('athlete', athlete);
             return athlete;
         });
+    },
+
+    /**
+     * @typedef {Object} Activity
+     * @see https://strava.github.io/api/v3/activities/
+     */
+
+    /**
+     * @typedef {Object.<Activity.id, Activity>} Activities
+     * @see https://strava.github.io/api/v3/activities/
+     */
+
+    /**
+     * loads athlete activities
+     * @return {Promises.<Activities>}
+     */
+    loadActivities: function () {
+        return this.request('/athlete/activities', {
+            per_page: 200
+        }).then((activitiesAr) => {
+            var knownActivities = this.get('activities') || {};
+            var newActivities = activitiesAr.reduce((activities, activity) => {
+                activities[activity.id] = activity;
+                return activities;
+            }, knownActivities);
+            this.set('activities', newActivities);
+            return newActivities;
+        });
     }
 }))(_.defaults(
     storedData,
     {
         token: null,
-        athlete: null
+        athlete: null,
+        activities: null
     }
 ));
 

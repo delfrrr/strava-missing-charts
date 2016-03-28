@@ -8,6 +8,7 @@ var _  = require('lodash');
 var appHolder = document.createElement('span');
 var model = require('./model');
 var loginComponent = require('./component/login');
+var chartsComponent = require('./component/charts');
 require('./client.less');
 var component = React.createClass({
     getInitialState: function () {
@@ -24,7 +25,7 @@ var component = React.createClass({
                 className: 'client'
             },
             this.state.athlete ?
-            'charts' :
+            chartsComponent() :
             loginComponent()
         );
     }
