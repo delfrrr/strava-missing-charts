@@ -13,4 +13,20 @@
         stroke-width: 1px;
         stroke: #000;
     }
+    &__toggle
+    {
+        width: 80px;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        & + &
+        {
+            left: 100px;
+        }
+    }
+    &__controls
+    {
+        position: relative;
+        height: 50px;
+    }
 }

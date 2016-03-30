@@ -89,7 +89,9 @@ var model = new (Model.extend({
     {
         token: null,
         athlete: null,
-        activities: null
+        activities: null,
+        run: true,
+        ride: true
     }
 ));
 

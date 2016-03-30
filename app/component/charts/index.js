@@ -20,6 +20,7 @@ const CHART_SIZE = [1040, 300];
 const SVG_SIZE = [1040 + 20, 600];
 var line = d3shape.line();
 var timeScale = d3scale.scaleTime().range([0, CHART_SIZE[0]]);
+var activityToggleComponent = require('../activity-toggle');
 require('./charts.less');
 
 /**
@@ -123,6 +124,30 @@ var component = React.createClass({
                 React.DOM.div(
                     null,
                     'Loading charts...'
+                ),
+            this.state.fitnessLine &&
+                React.DOM.div(
+                    {
+                        className: 'charts__controls'
+                    },
+                    React.DOM.div(
+                        {
+                            className: 'charts__toggle'
+                        },
+                        activityToggleComponent({
+                            label: 'Ride',
+                            modelField: 'ride'
+                        })
+                    ),
+                    React.DOM.div(
+                        {
+                            className: 'charts__toggle'
+                        },
+                        activityToggleComponent({
+                            label: 'Run',
+                            modelField: 'run'
+                        })
+                    )
                 ),
             React.DOM.svg(
                 {
