@@ -23,6 +23,16 @@ var timeScale = d3scale.scaleTime().range([0, CHART_SIZE[0]]);
 var activityToggleComponent = require('../activity-toggle');
 require('./charts.less');
 
+function filterActivities (activity) {
+    return (
+        activity.suffer_score &&
+        (
+            (model.get('run') && activity.type === 'Run') ||
+            (model.get('ride') && activity.type === 'Ride')
+        )
+    );
+}
+
 /**
  * @typedef {Array} TrainingImpulse
  * @prop {Number} 0 - timestamp
@@ -32,7 +42,8 @@ require('./charts.less');
 var component = React.createClass({
     getInitialState: function () {
         return {
-            fitnessLine: null
+            fitnessLine: null,
+            loaded: false
         }
     },
 
@@ -67,11 +78,15 @@ var component = React.createClass({
          */
         var trainingImpulses = Object.keys(this._activities).map((id) => {
             return this._activities[id];
-        }).filter((activity) => {
-            return activity.suffer_score;
-        }).map((activity) => {
+        }).filter(filterActivities).map((activity) => {
             return [Date.parse(activity.start_date), activity.suffer_score];
         });
+        if (trainingImpulses.length === 0) {
+            this.setState({
+                fitnessLine: null
+            });
+            return;
+        }
         var time = trainingImpulses[0][0];
         var impulse;
         var endTime = Date.now();
@@ -112,7 +127,11 @@ var component = React.createClass({
     componentDidMount: function () {
         model.loadActivities().then((activities) => {
             this._activities = activities;
+            this.setState({
+                loaded: true
+            });
             this._updateCharts();
+            model.on('change', this._updateCharts);
         });
     },
     render: function () {
@@ -120,12 +139,12 @@ var component = React.createClass({
             {
                 className: 'charts'
             },
-            !this.state.fitnessLine &&
+            !this.state.loaded &&
                 React.DOM.div(
                     null,
                     'Loading charts...'
                 ),
-            this.state.fitnessLine &&
+            this.state.loaded &&
                 React.DOM.div(
                     {
                         className: 'charts__controls'
