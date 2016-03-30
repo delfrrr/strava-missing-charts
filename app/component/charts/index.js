@@ -10,6 +10,7 @@ var d3shape = require('d3-shape');
 var d3axis = require('d3-axis');
 var d3scale = require('d3-scale');
 var d3selection = require('d3-selection');
+var d3time = require('d3-time');
 const DAY_LENGTH = 24 * 3600 * 1000;
 //fitness impact
 const TF = 42 * DAY_LENGTH;
@@ -39,16 +40,15 @@ var component = React.createClass({
             var trainingImpulses = Object.keys(activities).map((id) => {
                 return activities[id];
             }).filter((activity) => {
-                return activity.suffer_score &&
-                        activity.type === 'Ride';
+                return activity.suffer_score;
             }).map((activity) => {
                 return [Date.parse(activity.start_date), activity.suffer_score];
             });
             var time = trainingImpulses[0][0];
             var impulse;
-            var endTime = trainingImpulses.slice(-1)[0][0];
+            var endTime = Date.now();
             var fitnessAr = [];
-            var dateScale = d3scale.scaleLinear()
+            var dateScale = d3scale.scaleTime()
                 .domain([time, endTime])
                 .range([0, CHART_SIZE[0]])
             while (time < endTime) {
@@ -75,11 +75,12 @@ var component = React.createClass({
             var line = d3shape.line();
             var axisX = d3axis.axisBottom(dateScale);
             var axisXYears = d3axis.axisBottom(dateScale);
-            // axisX.ticks(15);
-            // axisXYears.ticks(3);
+            axisX.tickArguments([d3time.timeMonth, 1]);
+            axisXYears.tickArguments([d3time.timeYear, 1]);
             axisXYears.tickSize(0);
-            axisXYears.tickSizeInner(30);
-            axisX.tickSizeInner(10);
+            axisXYears.tickPadding(35);
+            axisX.tickPadding(10);
+            axisX.tickSizeInner(5);
             axisX.tickSizeOuter(1);
             axisX.tickFormat((value) => {
                 return moment(value).format('MMM');
@@ -87,10 +88,8 @@ var component = React.createClass({
             axisXYears.tickFormat((value) => {
                 return moment(value).format('YYYY');
             });
-            // var svg = document.createElement('g');
             axisX(d3selection.select(this.refs.axisX));
             axisXYears(d3selection.select(this.refs.axisXYears));
-            // console.log(svg);
             this.setState({
                 fitnessLine: line(fitnessAr)
             });
@@ -131,7 +130,8 @@ var component = React.createClass({
                     },
                     React.DOM.g(
                         {
-                            ref: 'axisX'
+                            ref: 'axisX',
+                            className: 'charts__axis-x'
                         }
                     ),
                     React.DOM.g(
