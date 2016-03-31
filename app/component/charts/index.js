@@ -11,6 +11,12 @@ var d3axis = require('d3-axis');
 var d3scale = require('d3-scale');
 var d3selection = require('d3-selection');
 var d3time = require('d3-time');
+var chroma = require('chroma-js');
+const ACTIVITY_COLORS = {
+    ride:'#FFB14A',
+    run:'#2EA4A8'
+}
+var _ = require('lodash');
 const DAY_LENGTH = 24 * 3600 * 1000;
 //fitness impact
 const TF = 42 * DAY_LENGTH;
@@ -19,25 +25,43 @@ const TF = 42 * DAY_LENGTH;
 const CHART_SIZE = [1040, 300];
 const SVG_SIZE = [1040 + 20, 600];
 var line = d3shape.line();
+var area = d3shape.area();
 var timeScale = d3scale.scaleTime().range([0, CHART_SIZE[0]]);
 var activityToggleComponent = require('../activity-toggle');
 require('./charts.less');
-
-function filterActivities (activity) {
-    return (
-        activity.suffer_score &&
-        (
-            (model.get('run') && activity.type === 'Run') ||
-            (model.get('ride') && activity.type === 'Ride')
-        )
-    );
-}
 
 /**
  * @typedef {Array} TrainingImpulse
  * @prop {Number} 0 - timestamp
  * @prop {Number} 1 - value
  */
+
+/**
+ * @param {Object.<Activity.id, Activity>} activities
+ * @returns {Object.<Activity.type, TrainingImpulse[]>} training impulses
+ */
+function getTrainingImpulses(activities) {
+    var trainingImpulses = {
+        run: [],
+        ride: [],
+        total: []
+    };
+    Object.keys(activities).forEach((id) => {
+        var activity = activities[id];
+        var ts = Date.parse(activity.start_date);
+        var impulse = activity.suffer_score;
+        if (impulse) {
+            var item = [ts, impulse];
+            trainingImpulses.total.push(item);
+            if (activity.type === 'Run') {
+                trainingImpulses.run.push(item);
+            } else if (activity.type === 'Ride') {
+                trainingImpulses.ride.push(item);
+            }
+        }
+    });
+    return trainingImpulses;
+}
 
 var component = React.createClass({
     getInitialState: function () {
@@ -73,56 +97,78 @@ var component = React.createClass({
     },
 
     _updateCharts: function () {
-        /**
-         * @type {TrainingImpulse[]}
-         */
-        var trainingImpulses = Object.keys(this._activities).map((id) => {
-            return this._activities[id];
-        }).filter(filterActivities).map((activity) => {
-            return [Date.parse(activity.start_date), activity.suffer_score];
-        });
-        if (trainingImpulses.length === 0) {
+        var trainingImpulses = getTrainingImpulses(this._activities);
+        var fitness = {
+            run: [],
+            ride: [],
+            total: []
+        };
+        if (trainingImpulses.total.length === 0) {
             this.setState({
-                fitnessLine: null
+                totalLine: null,
+                rideArea: null,
+                runArea: null
             });
             return;
         }
-        var time = trainingImpulses[0][0];
-        var impulse;
+        var time = Math.min.apply(Math, trainingImpulses.total.map(
+            (item) => {return item[0]}
+        ));
         var endTime = Date.now();
+        var impulse = 0;
         timeScale.domain([time, endTime]);
 
-        /**
-         * time, impulse sum pairs
-         * @type {Array.<{{0: number, 1: number}}>}
-         */
-        var fitnessAr = [];
-
         while (time < endTime) {
-            impulse = 0;
-            trainingImpulses.forEach((impulseAr) => {
-                var impulseTime, impulseValue;
-                [impulseTime, impulseValue] = impulseAr;
-                if (impulseTime <= time) {
-                    impulse += impulseValue * Math.exp((impulseTime - time) / TF)
-                }
+            Object.keys(trainingImpulses).forEach((type) => {
+                impulse = 0;
+                trainingImpulses[type].forEach((impulseAr) => {
+                    var impulseTime, impulseValue;
+                    [impulseTime, impulseValue] = impulseAr;
+                    if (impulseTime <= time) {
+                        impulse += impulseValue * Math.exp((impulseTime - time) / TF)
+                    }
+                });
+                fitness[type].push([timeScale(time), impulse]);
             });
-            fitnessAr.push([timeScale(time), impulse]);
             time += DAY_LENGTH;
         }
-        var maxFitness = Math.max.apply(Math, fitnessAr.map((fitness) => {
+        var maxFitness = Math.max.apply(Math, fitness.total.map((fitness) => {
             return fitness[1];
         }));
         var fitnessScale = d3scale.scaleLinear()
             .domain([0, maxFitness])
             .range([0, CHART_SIZE[1]])
-        fitnessAr.forEach((fitness) => {
-            fitness[1] = fitnessScale(fitness[1]);
+        _.forEach(fitness, (fitnessAr) => {
+            fitnessAr.forEach((fitness) => {
+                fitness[1] = fitnessScale(fitness[1]);
+            });
         });
         this._updateAxis(timeScale);
-        this.setState({
-            fitnessLine: line(fitnessAr)
-        });
+        if (model.get('run') && model.get('ride')) {
+            this.setState({
+                totalLine: line(fitness.total),
+                rideArea: area(fitness.ride),
+                runArea: area(fitness.total)
+            });
+        } else if (model.get('run')) {
+            this.setState({
+                totalLine: line(fitness.run),
+                rideArea: null,
+                runArea: area(fitness.run)
+            });
+        } else if (model.get('ride')) {
+            this.setState({
+                totalLine: line(fitness.ride),
+                rideArea: area(fitness.ride),
+                runArea: null
+            });
+        } else {
+            this.setState({
+                totalLine: null,
+                rideArea: null,
+                runArea: null
+            });
+        }
     },
     componentDidMount: function () {
         model.loadActivities().then((activities) => {
@@ -176,17 +222,35 @@ var component = React.createClass({
                     className: 'charts__svg',
                     ref: 'svg'
                 },
-                this.state.fitnessLine &&
-                    React.DOM.path(
-                        {
-                            d: this.state.fitnessLine,
-                            strokeStyle: 'solid',
-                            strokeWidth: '1px',
-                            stroke: '#000000',
-                            fill: 'transparent',
-                            transform: `matrix(1 0 0 -1 0 ${CHART_SIZE[1]})`
-                        }
-                    ),
+                this.state.runArea &&
+                React.DOM.path(
+                    {
+                        d: this.state.runArea,
+                        strokeWidth: '0',
+                        fill: chroma(ACTIVITY_COLORS.run).luminance(0.6).css(),
+                        transform: `matrix(1 0 0 -1 0 ${CHART_SIZE[1]})`
+                    }
+                ),
+                this.state.rideArea &&
+                React.DOM.path(
+                    {
+                        d: this.state.rideArea,
+                        strokeWidth: '0',
+                        fill: chroma(ACTIVITY_COLORS.ride).luminance(0.5).css(),
+                        transform: `matrix(1 0 0 -1 0 ${CHART_SIZE[1]})`
+                    }
+                ),
+                this.state.totalLine &&
+                React.DOM.path(
+                    {
+                        d: this.state.totalLine,
+                        strokeStyle: 'solid',
+                        strokeWidth: '1px',
+                        stroke: '#000000',
+                        fill: 'transparent',
+                        transform: `matrix(1 0 0 -1 0 ${CHART_SIZE[1]})`
+                    }
+                ),
                 React.DOM.g(
                     {
                         transform: `matrix(1 0 0 1 0 ${CHART_SIZE[1]})`
