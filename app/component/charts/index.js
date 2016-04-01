@@ -5,6 +5,7 @@
 
 var React = require('react');
 var model = require('../../model');
+const IMPULSE_TYPE = model.IMPULSE_TYPE;
 var moment = require('moment');
 var d3shape = require('d3-shape');
 var d3axis = require('d3-axis');
@@ -27,7 +28,9 @@ const SVG_SIZE = [1040 + 20, 600];
 var line = d3shape.line();
 var area = d3shape.area();
 var timeScale = d3scale.scaleTime().range([0, CHART_SIZE[0]]);
-var activityToggleComponent = require('../activity-toggle');
+var modelToggleComponent = require('../model-toggle');
+var modelSelectComponent = require('../model-select');
+require('react-tap-event-plugin')();
 require('./charts.less');
 
 /**
@@ -35,6 +38,22 @@ require('./charts.less');
  * @prop {Number} 0 - timestamp
  * @prop {Number} 1 - value
  */
+
+/**
+ * @param {Activity} activity
+ * @returns {number} impulse value
+ */
+function getImpulse (activity) {
+    switch (model.get('impulseType')) {
+        case IMPULSE_TYPE.sufferScore:
+            return Number(activity.suffer_score)
+        case IMPULSE_TYPE.heartRate:
+            return (
+                (activity.average_heartrate - model.get('restHR')) /
+                (model.get('maxHR') - model.get('restHR'))
+            ) * activity.moving_time
+    }
+}
 
 /**
  * @param {Object.<Activity.id, Activity>} activities
@@ -49,7 +68,7 @@ function getTrainingImpulses(activities) {
     Object.keys(activities).forEach((id) => {
         var activity = activities[id];
         var ts = Date.parse(activity.start_date);
-        var impulse = activity.suffer_score;
+        var impulse = getImpulse(activity);
         if (impulse) {
             var item = [ts, impulse];
             trainingImpulses.total.push(item);
@@ -199,7 +218,7 @@ var component = React.createClass({
                         {
                             className: 'charts__toggle'
                         },
-                        activityToggleComponent({
+                        modelToggleComponent({
                             label: 'Ride',
                             modelField: 'ride'
                         })
@@ -208,9 +227,21 @@ var component = React.createClass({
                         {
                             className: 'charts__toggle'
                         },
-                        activityToggleComponent({
+                        modelToggleComponent({
                             label: 'Run',
                             modelField: 'run'
+                        })
+                    ),
+                    React.DOM.div(
+                        {
+                            className: 'charts__select charts__select_type_impulse'
+                        },
+                        modelSelectComponent({
+                            modelField: 'impulseType',
+                            options: [
+                                {value: IMPULSE_TYPE.sufferScore, primaryText: 'Suffer Score'},
+                                {value: IMPULSE_TYPE.heartRate, primaryText:'TRIMP'}
+                            ]
                         })
                     )
                 ),
@@ -227,7 +258,7 @@ var component = React.createClass({
                     {
                         d: this.state.runArea,
                         strokeWidth: '0',
-                        fill: chroma(ACTIVITY_COLORS.run).luminance(0.6).css(),
+                        fill: chroma(ACTIVITY_COLORS.run).luminance(0.9).css(),
                         transform: `matrix(1 0 0 -1 0 ${CHART_SIZE[1]})`
                     }
                 ),
@@ -236,7 +267,7 @@ var component = React.createClass({
                     {
                         d: this.state.rideArea,
                         strokeWidth: '0',
-                        fill: chroma(ACTIVITY_COLORS.ride).luminance(0.5).css(),
+                        fill: chroma(ACTIVITY_COLORS.ride).luminance(0.8).css(),
                         transform: `matrix(1 0 0 -1 0 ${CHART_SIZE[1]})`
                     }
                 ),
@@ -245,7 +276,7 @@ var component = React.createClass({
                     {
                         d: this.state.totalLine,
                         strokeStyle: 'solid',
-                        strokeWidth: '1px',
+                        strokeWidth: '1.5px',
                         stroke: '#000000',
                         fill: 'transparent',
                         transform: `matrix(1 0 0 -1 0 ${CHART_SIZE[1]})`

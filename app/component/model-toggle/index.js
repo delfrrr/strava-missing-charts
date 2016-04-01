@@ -1,5 +1,5 @@
 /**
- * @module activity-toggle
+ * @module model-toggle
  */
 'use strict';
 

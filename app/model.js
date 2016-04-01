@@ -8,6 +8,10 @@ var jsonp = Promise.promisify(require('jsonp'));
 var _  = require('lodash');
 const API_URL = 'https://www.strava.com/api/v3';
 const DOM_STORAGE_KEY = 'model_storage';
+const IMPULSE_TYPE = {
+    sufferScore: 'SUFFER_SCORE',
+    heartRate: 'HEART_RATE'
+};
 var url = require('url');
 
 //load model data
@@ -25,6 +29,12 @@ if (storedData) {
 storedData = storedData || {};
 
 var model = new (Model.extend({
+
+    /**
+     * @enum {number}
+     */
+    IMPULSE_TYPE: IMPULSE_TYPE,
+
     /**
      * request strava api
      * @param {string} endpoint
@@ -40,6 +50,8 @@ var model = new (Model.extend({
         var requestUrl = url.format(urlObj);
         return jsonp(requestUrl);
     },
+
+
 
     /**
      * @typedef {Object} Athlete
@@ -91,7 +103,11 @@ var model = new (Model.extend({
         athlete: null,
         activities: null,
         run: true,
-        ride: true
+        ride: true,
+        impulseType: IMPULSE_TYPE.sufferScore,
+        //TODO: add to form
+        restHR: 60,
+        maxHR: 207// it's important only when compare athlets
     }
 ));
 
