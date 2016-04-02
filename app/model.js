@@ -12,6 +12,10 @@ const IMPULSE_TYPE = {
     sufferScore: 'SUFFER_SCORE',
     heartRate: 'HEART_RATE'
 };
+const METRIC_TYPE = {
+    fitness: 'FITNESS',
+    form: 'FORM'
+};
 var url = require('url');
 
 //load model data
@@ -31,9 +35,14 @@ storedData = storedData || {};
 var model = new (Model.extend({
 
     /**
-     * @enum {number}
+     * @enum {string}
      */
     IMPULSE_TYPE: IMPULSE_TYPE,
+
+    /**
+     * @enum {string}
+     */
+    METRIC_TYPE: METRIC_TYPE,
 
     /**
      * request strava api
@@ -105,7 +114,7 @@ var model = new (Model.extend({
         run: true,
         ride: true,
         impulseType: IMPULSE_TYPE.sufferScore,
-        //TODO: add to form
+        metric: METRIC_TYPE.fitness,
         restHR: 60,
         maxHR: 207// it's important only when compare athlets
     }

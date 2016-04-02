@@ -6,6 +6,7 @@
 var React = require('react');
 var model = require('../../model');
 const IMPULSE_TYPE = model.IMPULSE_TYPE;
+const METRIC_TYPE = model.METRIC_TYPE;
 var moment = require('moment');
 var d3shape = require('d3-shape');
 var d3axis = require('d3-axis');
@@ -19,10 +20,15 @@ const ACTIVITY_COLORS = {
 }
 var _ = require('lodash');
 const DAY_LENGTH = 24 * 3600 * 1000;
+
 //fitness impact
 const TF = 42 * DAY_LENGTH;
+const KF = 1;
+
 //fatigue impact
-// const TA = 7 * DAY_LENGTH;
+const TA = 7 * DAY_LENGTH;
+const KA = 2;
+
 const CHART_SIZE = [1040, 300];
 const SVG_SIZE = [1040 + 20, 600];
 var line = d3shape.line();
@@ -38,6 +44,38 @@ require('./charts.less');
  * @prop {Number} 0 - timestamp
  * @prop {Number} 1 - value
  */
+
+
+/**
+ * @param {TrainingImpulse[]} trainingImpulses
+ * @param {Number} time
+ * @return {Number} metric value
+ */
+function getMetricValue(trainingImpulses, time) {
+    var value = 0;
+    var metric = model.get('metric');
+    trainingImpulses.forEach((impulseAr) => {
+        var impulseTime, impulseValue;
+        [impulseTime, impulseValue] = impulseAr;
+        if (impulseTime <= time) {
+            switch (metric) {
+                case METRIC_TYPE.fitness:
+                    value += KF * impulseValue * Math.exp((impulseTime - time) / TF)
+                    break;
+                case METRIC_TYPE.form:
+                    value += (
+                        KF * impulseValue * Math.exp((impulseTime - time) / TF) -
+                        KA * impulseValue * Math.exp((impulseTime - time) / TA)
+                    );
+                    if (value < 0) {
+                        value = 0;
+                    }
+                    break;
+            }
+        }
+    });
+    return value;
+}
 
 /**
  * @param {Activity} activity
@@ -117,7 +155,7 @@ var component = React.createClass({
 
     _updateCharts: function () {
         var trainingImpulses = getTrainingImpulses(this._activities);
-        var fitness = {
+        var metric = {
             run: [],
             ride: [],
             total: []
@@ -134,51 +172,50 @@ var component = React.createClass({
             (item) => {return item[0]}
         ));
         var endTime = Date.now();
-        var impulse = 0;
         timeScale.domain([time, endTime]);
 
         while (time < endTime) {
             Object.keys(trainingImpulses).forEach((type) => {
-                impulse = 0;
-                trainingImpulses[type].forEach((impulseAr) => {
-                    var impulseTime, impulseValue;
-                    [impulseTime, impulseValue] = impulseAr;
-                    if (impulseTime <= time) {
-                        impulse += impulseValue * Math.exp((impulseTime - time) / TF)
-                    }
-                });
-                fitness[type].push([timeScale(time), impulse]);
+                let value = getMetricValue(trainingImpulses[type], time);
+                // trainingImpulses[type].forEach((impulseAr) => {
+                //     var impulseTime, impulseValue;
+                //     [impulseTime, impulseValue] = impulseAr;
+                //     if (impulseTime <= time) {
+                //         value += impulseValue * Math.exp((impulseTime - time) / TF)
+                //     }
+                // });
+                metric[type].push([timeScale(time), value]);
             });
             time += DAY_LENGTH;
         }
-        var maxFitness = Math.max.apply(Math, fitness.total.map((fitness) => {
+        var maxValue = Math.max.apply(Math, metric.total.map((fitness) => {
             return fitness[1];
         }));
-        var fitnessScale = d3scale.scaleLinear()
-            .domain([0, maxFitness])
+        var scaleX = d3scale.scaleLinear()
+            .domain([0, maxValue])
             .range([0, CHART_SIZE[1]])
-        _.forEach(fitness, (fitnessAr) => {
-            fitnessAr.forEach((fitness) => {
-                fitness[1] = fitnessScale(fitness[1]);
+        _.forEach(metric, (metricAr) => {
+            metricAr.forEach((metricValue) => {
+                metricValue[1] = scaleX(metricValue[1]);
             });
         });
         this._updateAxis(timeScale);
         if (model.get('run') && model.get('ride')) {
             this.setState({
-                totalLine: line(fitness.total),
-                rideArea: area(fitness.ride),
-                runArea: area(fitness.total)
+                totalLine: line(metric.total),
+                rideArea: area(metric.ride),
+                runArea: area(metric.total)
             });
         } else if (model.get('run')) {
             this.setState({
-                totalLine: line(fitness.run),
+                totalLine: line(metric.run),
                 rideArea: null,
-                runArea: area(fitness.run)
+                runArea: area(metric.run)
             });
         } else if (model.get('ride')) {
             this.setState({
-                totalLine: line(fitness.ride),
-                rideArea: area(fitness.ride),
+                totalLine: line(metric.ride),
+                rideArea: area(metric.ride),
                 runArea: null
             });
         } else {
@@ -241,6 +278,18 @@ var component = React.createClass({
                             options: [
                                 {value: IMPULSE_TYPE.sufferScore, primaryText: 'Suffer Score'},
                                 {value: IMPULSE_TYPE.heartRate, primaryText:'TRIMP'}
+                            ]
+                        })
+                    ),
+                    React.DOM.div(
+                        {
+                            className: 'charts__select charts__select_type_metric'
+                        },
+                        modelSelectComponent({
+                            modelField: 'metric',
+                            options: [
+                                {value: METRIC_TYPE.fitness, primaryText: 'Fitness'},
+                                {value: METRIC_TYPE.form, primaryText: 'Form'}
                             ]
                         })
                     )
