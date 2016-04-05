@@ -9,6 +9,7 @@ var appHolder = document.createElement('span');
 var model = require('./model');
 var loginComponent = require('./component/login');
 var chartsComponent = require('./component/charts');
+// var calculatePerfomace = require('./calculate-perfomace');
 require('./client.less');
 var component = React.createClass({
     getInitialState: function () {
@@ -17,7 +18,13 @@ var component = React.createClass({
     componentDidMount: function () {
         model.on('change', () => {
             this.setState(model.toJSON());
+            model.save();
         });
+        model.fetch();
+        model.on('change:impulseType', model.updateTrainingImpulses, model);
+        model.on('change:token', model.updateAthlete, model);
+        model.on('change:athlete', model.loadActivities, model);
+        model.on('change:activities', model.updateTrainingImpulses, model);
     },
     render: function () {
         return React.DOM.div(

@@ -12,13 +12,7 @@ require('./login.less');
 var component = React.createClass({
     _onSubmit: function (e) {
         model.set('token', this.state.token);
-        model.updateAthlete().done();
         e.preventDefault();
-    },
-    getInitialState: function () {
-        return {
-            token: model.get('token')
-        };
     },
     render: function () {
         return React.DOM.form(
@@ -52,7 +46,7 @@ var component = React.createClass({
                         style: {
                             width: '100%'
                         },
-                        value: this.state.token,
+                        value: model.get('token'),
                         onChange: (e) => {
                             this.setState({token: e.target.value})
                         }

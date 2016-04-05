@@ -5,7 +5,6 @@
 
 var React = require('react');
 var model = require('../../model');
-const IMPULSE_TYPE = model.IMPULSE_TYPE;
 const METRIC_TYPE = model.METRIC_TYPE;
 var d3scale = require('d3-scale');
 var toolbarComponent = require('./../toolbar');
@@ -37,7 +36,14 @@ require('./charts.less');
 /**
  * @typedef {Array} TrainingImpulse
  * @prop {Number} 0 - timestamp
- * @prop {Number} 1 - value
+ * @prop {Number} 1 - trainingImpulse
+ * @prop {Activity.id} 2
+ */
+
+/**
+ * @typedef {Array} Metric
+ * @prop {Number} 0 - x
+ * @prop {Number} 1 - y
  */
 
 
@@ -73,123 +79,71 @@ function getMetricValue(trainingImpulses, time) {
 }
 
 /**
- * @param {Activity} activity
- * @returns {number} impulse value
+ * calculates current metric and scales it for screen
+ * @param {Object.<,trainingImpulse[]>} trainingImpulses
+ * @param {Object.<string,Metric[]>}
  */
-function getImpulse (activity) {
-    switch (model.get('impulseType')) {
-        case IMPULSE_TYPE.sufferScore:
-            return Number(activity.suffer_score)
-        case IMPULSE_TYPE.heartRate:
-            return (
-                (activity.average_heartrate - model.get('restHR')) /
-                (model.get('maxHR') - model.get('restHR'))
-            ) * activity.moving_time
-    }
-}
-
-/**
- * @param {Object.<Activity.id, Activity>} activities
- * @returns {Object.<Activity.type, TrainingImpulse[]>} training impulses
- */
-function getTrainingImpulses(activities) {
-    var trainingImpulses = {
+function getMetrics (trainingImpulses) {
+    var metrics = {
         run: [],
         ride: [],
         total: []
     };
-    Object.keys(activities).forEach((id) => {
-        var activity = activities[id];
-        var ts = Date.parse(activity.start_date);
-        var impulse = getImpulse(activity);
-        if (impulse) {
-            var item = [ts, impulse];
-            trainingImpulses.total.push(item);
-            if (activity.type === 'Run') {
-                trainingImpulses.run.push(item);
-            } else if (activity.type === 'Ride') {
-                trainingImpulses.ride.push(item);
-            }
-        }
+
+    //find start time
+    var time = Math.min.apply(Math, trainingImpulses.total.map(
+        (item) => {return item[0]}
+    ));
+
+    var endTime = Date.now() + DAY_LENGTH;
+
+    timeScale.domain([time, endTime]);
+
+    //calculate value for each day
+    while (time < endTime) {
+        Object.keys(trainingImpulses).forEach((type) => {
+            let value = getMetricValue(trainingImpulses[type], time);
+            metrics[type].push([timeScale(time), value]);
+        });
+        time += DAY_LENGTH;
+    }
+
+    var maxValue = Math.max.apply(Math, metrics.total.map((fitness) => {
+        return fitness[1];
+    }));
+
+    var scaleX = d3scale.scaleLinear()
+        .domain([0, maxValue])
+        .range([0, CHART_SIZE[1]]);
+
+    //scale values to fit chart
+    _.forEach(metrics, (metricAr) => {
+        metricAr.forEach((metricValue) => {
+            metricValue[1] = scaleX(metricValue[1]);
+        });
     });
-    return trainingImpulses;
+
+    return metrics;
 }
 
 var component = React.createClass({
-    getInitialState: function () {
-        return {
-            fitnessLine: null,
-            loaded: false
-        }
-    },
-
-    _activities: null,
-
-    _updateCharts: function () {
-        var trainingImpulses = getTrainingImpulses(this._activities);
-        var metrics = {
-            run: [],
-            ride: [],
-            total: []
-        };
-
-        //find start time
-        var time = Math.min.apply(Math, trainingImpulses.total.map(
-            (item) => {return item[0]}
-        ));
-
-        var endTime = Date.now() + DAY_LENGTH;
-
-        timeScale.domain([time, endTime]);
-
-        //calculate value for each day
-        while (time < endTime) {
-            Object.keys(trainingImpulses).forEach((type) => {
-                let value = getMetricValue(trainingImpulses[type], time);
-                metrics[type].push([timeScale(time), value]);
-            });
-            time += DAY_LENGTH;
-        }
-
-        var maxValue = Math.max.apply(Math, metrics.total.map((fitness) => {
-            return fitness[1];
-        }));
-
-        var scaleX = d3scale.scaleLinear()
-            .domain([0, maxValue])
-            .range([0, CHART_SIZE[1]]);
-
-        //scale values to fit chart
-        _.forEach(metrics, (metricAr) => {
-            metricAr.forEach((metricValue) => {
-                metricValue[1] = scaleX(metricValue[1]);
-            });
-        });
-
-        this.setState({
-            metrics,
-            trainingImpulses
-        });
-    },
-    componentDidMount: function () {
-        model.loadActivities().then((activities) => {
-            this._activities = activities;
-            this._updateCharts();
-            model.on('change', this._updateCharts);
-        });
-    },
     render: function () {
+        var trainingImpulses = model.get('trainingImpulses');
+        var metrics;
+        if (trainingImpulses) {
+            metrics = getMetrics(trainingImpulses);
+        }
         return React.DOM.div(
             {
                 className: 'charts'
             },
-            !this.state.metrics &&
+            !metrics &&
                 React.DOM.div(
                     null,
                     'Loading charts...'
                 ),
-            this.state.metrics && toolbarComponent(),
-            this.state.metrics && React.DOM.svg(
+            metrics && toolbarComponent(),
+            metrics && React.DOM.svg(
                 {
                     viewBox: `${-1 * SVG_PADDING[3]} ${-1 * SVG_PADDING[0]} ${CHART_SIZE[0] + SVG_PADDING[1]} ${CHART_SIZE[1] + SVG_PADDING[2] + TRAINING_IMPULSE_CHART_HEIGH}`,
                     width: CHART_SIZE[0] + SVG_PADDING[1] + SVG_PADDING[3],
@@ -198,7 +152,7 @@ var component = React.createClass({
                     ref: 'svg'
                 },
                 irChartComponent({
-                    metrics: this.state.metrics,
+                    metrics: metrics,
                     activityColors: ACTIVITY_COLORS,
                     height: CHART_SIZE[1]
                 }),
@@ -208,7 +162,7 @@ var component = React.createClass({
                     },
                     tiChartComponent({
                         activityColors: ACTIVITY_COLORS,
-                        trainingImpulses: this.state.trainingImpulses,
+                        trainingImpulses,
                         timeScale,
                         height: TRAINING_IMPULSE_CHART_HEIGH
                     })
