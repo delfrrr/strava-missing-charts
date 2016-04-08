@@ -129,7 +129,7 @@ var model = new (Model.extend({
             return this.request(`/activities/${activity.id}`, {
                 include_all_efforts: true
             });
-        })).then(function (fullRideActivities) {
+        })).then((fullRideActivities) => {
             this.set('fullRideActivities', fullRideActivities);
         });
     },
@@ -151,6 +151,11 @@ var model = new (Model.extend({
             return newActivities;
         });
     },
+
+    /**
+     * calculates similar activities by segments
+     */
+    updateRideRoutes: require('./update-ride-routes'),
 
     fetch: function () {
         var storedData = window.localStorage.getItem(DOM_STORAGE_KEY);
@@ -178,6 +183,7 @@ var model = new (Model.extend({
     athlete: null,
     activities: null,
     fullRideActivities: null,
+    rideRoutes: null,
     run: true,
     ride: true,
     impulseType: IMPULSE_TYPE.sufferScore,
