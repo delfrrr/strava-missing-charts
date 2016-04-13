@@ -21,19 +21,12 @@ var component = React.createClass({
             if (model.get('fullRideActivities')) {
                 model.updateRideRoutes();
             }
-            if (
-                model.get('trainingImpulses') &&
-                !model.get('fullRideActivities')
-            ) {
-                model.updateFullRideActivities();
-            }
         });
         model.fetch();
         model.on('change:impulseType', model.updateTrainingImpulses, model);
         model.on('change:token', model.updateAthlete, model);
         model.on('change:athlete', model.loadActivities, model);
         model.on('change:activities', model.updateTrainingImpulses, model);
-        model.on('change:trainingImpulses', model.updateFullRideActivities, model);
     },
     render: function () {
         return React.DOM.div(
