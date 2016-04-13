@@ -175,6 +175,8 @@ var model = new (Model.extend({
 
     save: function () {
         var jsonToSave = model.toJSON();
+        jsonToSave.fullRideActivities = null;
+        jsonToSave.rideRoutes = null;
         window.localStorage.setItem(DOM_STORAGE_KEY, JSON.stringify(jsonToSave));
     }
 

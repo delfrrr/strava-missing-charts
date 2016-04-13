@@ -21,6 +21,12 @@ var component = React.createClass({
             if (model.get('fullRideActivities')) {
                 model.updateRideRoutes();
             }
+            if (
+                model.get('trainingImpulses') &&
+                !model.get('fullRideActivities')
+            ) {
+                model.updateFullRideActivities();
+            }
         });
         model.fetch();
         model.on('change:impulseType', model.updateTrainingImpulses, model);

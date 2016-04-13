@@ -10,6 +10,7 @@ var d3scale = require('d3-scale');
 var toolbarComponent = require('./../toolbar');
 var irChartComponent = require('./../ir-chart');
 var tiChartComponent = require('./../ti-chart');
+var rpChartComponent = require('./../rp-chart');
 var xAxisComponent = require('./../x-axis');
 const ACTIVITY_COLORS = {
     ride:'#FFB14A',
@@ -28,6 +29,7 @@ const KA = 2;
 
 const CHART_SIZE = [1040, 300];
 const TRAINING_IMPULSE_CHART_HEIGH = 100;
+const RIDING_PERFOMANCE_CHART_HEIGHT = 300;
 const SVG_PADDING = [0, 20, 80, 20];
 var timeScale = d3scale.scaleTime().range([0, CHART_SIZE[0]]);
 require('react-tap-event-plugin')();
@@ -129,6 +131,7 @@ function getMetrics (trainingImpulses) {
 var component = React.createClass({
     render: function () {
         var trainingImpulses = model.get('trainingImpulses');
+        var rideRoutes = model.get('rideRoutes');
         var metrics;
         if (trainingImpulses) {
             metrics = getMetrics(trainingImpulses);
@@ -145,9 +148,21 @@ var component = React.createClass({
             metrics && toolbarComponent(),
             metrics && React.DOM.svg(
                 {
-                    viewBox: `${-1 * SVG_PADDING[3]} ${-1 * SVG_PADDING[0]} ${CHART_SIZE[0] + SVG_PADDING[1]} ${CHART_SIZE[1] + SVG_PADDING[2] + TRAINING_IMPULSE_CHART_HEIGH}`,
+                    viewBox: [
+                        -1 * SVG_PADDING[3],
+                        -1 * SVG_PADDING[0],
+                        CHART_SIZE[0] + SVG_PADDING[1],
+                        CHART_SIZE[1] +
+                            SVG_PADDING[2] +
+                            TRAINING_IMPULSE_CHART_HEIGH +
+                            RIDING_PERFOMANCE_CHART_HEIGHT
+                    ].join(' '),
                     width: CHART_SIZE[0] + SVG_PADDING[1] + SVG_PADDING[3],
-                    height: CHART_SIZE[1]  + SVG_PADDING[0] + SVG_PADDING[2] + TRAINING_IMPULSE_CHART_HEIGH,
+                    height: CHART_SIZE[1] +
+                        SVG_PADDING[0] +
+                        SVG_PADDING[2] +
+                        TRAINING_IMPULSE_CHART_HEIGH +
+                        RIDING_PERFOMANCE_CHART_HEIGHT,
                     className: 'charts__svg',
                     ref: 'svg'
                 },
@@ -165,6 +180,16 @@ var component = React.createClass({
                         trainingImpulses,
                         timeScale,
                         height: TRAINING_IMPULSE_CHART_HEIGH
+                    })
+                ),
+                rideRoutes && React.DOM.g(
+                    {
+                        transform: `translate(0, ${CHART_SIZE[1] + TRAINING_IMPULSE_CHART_HEIGH})`
+                    },
+                    rpChartComponent({
+                        height: RIDING_PERFOMANCE_CHART_HEIGHT,
+                        rideRoutes,
+                        timeScale
                     })
                 ),
                 xAxisComponent({
