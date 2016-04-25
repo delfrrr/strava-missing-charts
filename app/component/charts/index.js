@@ -26,10 +26,11 @@ const KF = 1;
 const TA = 7 * DAY_LENGTH;
 const KA = 2;
 
-const CHART_SIZE = [1040, 300];
+const CHART_WIDTH = 1040;
+const IR_CHART_HEIGHT = 300;
 const TRAINING_IMPULSE_CHART_HEIGH = 100;
 const SVG_PADDING = [0, 20, 80, 20];
-var timeScale = d3scale.scaleTime().range([0, CHART_SIZE[0]]);
+var timeScale = d3scale.scaleTime().range([0, CHART_WIDTH]);
 require('react-tap-event-plugin')();
 require('./charts.less');
 
@@ -114,7 +115,7 @@ function getMetrics (trainingImpulses) {
 
     var scaleX = d3scale.scaleLinear()
         .domain([0, maxValue])
-        .range([0, CHART_SIZE[1]]);
+        .range([0, IR_CHART_HEIGHT]);
 
     //scale values to fit chart
     _.forEach(metrics, (metricAr) => {
@@ -143,46 +144,26 @@ var component = React.createClass({
                     'Loading charts...'
                 ),
             metrics && toolbarComponent(),
-            metrics && React.DOM.svg(
-                {
-                    viewBox: [
-                        -1 * SVG_PADDING[3],
-                        -1 * SVG_PADDING[0],
-                        CHART_SIZE[0] + SVG_PADDING[1],
-                        CHART_SIZE[1] +
-                            SVG_PADDING[2] +
-                            TRAINING_IMPULSE_CHART_HEIGH
-                    ].join(' '),
-                    width: CHART_SIZE[0] + SVG_PADDING[1] + SVG_PADDING[3],
-                    height: CHART_SIZE[1] +
-                        SVG_PADDING[0] +
-                        SVG_PADDING[2] +
-                        TRAINING_IMPULSE_CHART_HEIGH,
-                    className: 'charts__svg',
-                    ref: 'svg'
-                },
-                irChartComponent({
-                    metrics: metrics,
-                    activityColors: ACTIVITY_COLORS,
-                    height: CHART_SIZE[1]
-                }),
-                React.DOM.g(
-                    {
-                        transform: `translate(0, ${CHART_SIZE[1]})`
-                    },
-                    tiChartComponent({
-                        activityColors: ACTIVITY_COLORS,
-                        trainingImpulses,
-                        timeScale,
-                        height: TRAINING_IMPULSE_CHART_HEIGH
-                    })
-                ),
-                xAxisComponent({
-                    irChartHeight: CHART_SIZE[1],
-                    tiChartHeight: TRAINING_IMPULSE_CHART_HEIGH,
-                    timeScale
-                })
-            )
+            metrics && irChartComponent({
+                metrics: metrics,
+                activityColors: ACTIVITY_COLORS,
+                width: CHART_WIDTH,
+                height: IR_CHART_HEIGHT
+            }),
+            metrics && xAxisComponent({
+                type: xAxisComponent.TYPE.extended,
+                timeScale
+            }),
+            metrics && tiChartComponent({
+                activityColors: ACTIVITY_COLORS,
+                trainingImpulses,
+                timeScale,
+                height: TRAINING_IMPULSE_CHART_HEIGH
+            }),
+            metrics && xAxisComponent({
+                type: xAxisComponent.TYPE.compact,
+                timeScale
+            })
         );
     }
 });

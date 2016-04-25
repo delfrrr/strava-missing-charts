@@ -51,15 +51,21 @@ var component = React.createClass({
             .domain([0, maxImpulse])
             .range([0, this.props.height - TOP_PADDING]);
         var transform = `matrix(1 0 0 -1 0 ${this.props.height})`;
-        return React.DOM.g(
+        return React.DOM.svg(
             {
-                transform
+                width: this.props.timeScale.range()[1],
+                height: this.props.height
             },
-            getBars(
-                this.props.trainingImpulses,
-                this.props.timeScale,
-                valueScale,
-                this.props.activityColors
+            React.DOM.g(
+                {
+                    transform
+                },
+                getBars(
+                    this.props.trainingImpulses,
+                    this.props.timeScale,
+                    valueScale,
+                    this.props.activityColors
+                )
             )
         );
     }

@@ -17,40 +17,46 @@ var component = React.createClass({
         var run = model.get('run');
         var ride = model.get('ride');
         var metrics = this.props.metrics;
-        return React.DOM.g(
-            null,
-            run &&
-            React.DOM.path(
-                {
-                    d: ride ? area(metrics.total) : area(metrics.run),
-                    strokeWidth: '0',
-                    fill: chroma(this.props.activityColors.run).luminance(0.9).css(),
-                    transform
-                }
-            ),
-            ride &&
-            React.DOM.path(
-                {
-                    d: area(metrics.ride),
-                    strokeWidth: '0',
-                    fill: chroma(this.props.activityColors.ride).luminance(0.8).css(),
-                    transform
-                }
-            ),
-            (run || ride) &&
-            React.DOM.path(
-                {
-                    d: (
-                        (run && ride && line(metrics.total)) ||
-                        (run && line(metrics.run)) ||
-                        (ride && line(metrics.ride))
-                    ),
-                    strokeStyle: 'solid',
-                    strokeWidth: '1.5px',
-                    stroke: '#000000',
-                    fill: 'transparent',
-                    transform
-                }
+        return React.DOM.svg(
+            {
+                width: this.props.width,
+                height: this.props.height
+            },
+            React.DOM.g(
+                null,
+                run &&
+                React.DOM.path(
+                    {
+                        d: ride ? area(metrics.total) : area(metrics.run),
+                        strokeWidth: '0',
+                        fill: chroma(this.props.activityColors.run).luminance(0.9).css(),
+                        transform
+                    }
+                ),
+                ride &&
+                React.DOM.path(
+                    {
+                        d: area(metrics.ride),
+                        strokeWidth: '0',
+                        fill: chroma(this.props.activityColors.ride).luminance(0.8).css(),
+                        transform
+                    }
+                ),
+                (run || ride) &&
+                React.DOM.path(
+                    {
+                        d: (
+                            (run && ride && line(metrics.total)) ||
+                            (run && line(metrics.run)) ||
+                            (ride && line(metrics.ride))
+                        ),
+                        strokeStyle: 'solid',
+                        strokeWidth: '1.5px',
+                        stroke: '#000000',
+                        fill: 'transparent',
+                        transform
+                    }
+                )
             )
         );
     }
