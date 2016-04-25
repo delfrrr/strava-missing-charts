@@ -118,6 +118,22 @@ var model = new (Model.extend({
         this.set('trainingImpulses', trainingImpulses);
     },
 
+    updateStaredSegments: function () {
+        var athlete = this.get('athlete');
+        this.request(
+            `/athletes/${athlete.id}/segments/starred`
+        ).then((staredSegments) => {
+            return Promise.all(staredSegments.map((segment) => {
+                return this.request(`/segments/${segment.id}/all_efforts`, {
+                    athlete_id: athlete.id,
+                    per_page: 200
+                });
+            }));
+        }).then((effortsAr) => {
+            this.set('starredEfforts', effortsAr);
+        });
+    },
+
     updateFullRideActivities: function () {
         var activities = this.get('activities');
         var rideActivities = this.get('trainingImpulses').ride.map(
@@ -175,6 +191,7 @@ var model = new (Model.extend({
 
     save: function () {
         var jsonToSave = model.toJSON();
+        jsonToSave.activities = null;
         jsonToSave.fullRideActivities = null;
         jsonToSave.rideRoutes = null;
         window.localStorage.setItem(DOM_STORAGE_KEY, JSON.stringify(jsonToSave));
@@ -185,6 +202,7 @@ var model = new (Model.extend({
     athlete: null,
     activities: null,
     fullRideActivities: null,
+    starredEfforts: null,
     rideRoutes: null,
     run: true,
     ride: true,

@@ -18,8 +18,8 @@ var component = React.createClass({
         model.on('change', () => {
             this.setState(model.toJSON());
             model.save();
-            if (model.get('fullRideActivities')) {
-                model.updateRideRoutes();
+            if (model.get('athlete')) {
+                model.loadActivities();
             }
         });
         model.fetch();
@@ -27,6 +27,7 @@ var component = React.createClass({
         model.on('change:token', model.updateAthlete, model);
         model.on('change:athlete', model.loadActivities, model);
         model.on('change:activities', model.updateTrainingImpulses, model);
+        model.on('change:activities', model.updateStaredSegments, model);
     },
     render: function () {
         return React.DOM.div(
